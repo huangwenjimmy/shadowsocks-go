@@ -28,7 +28,7 @@ type Config struct {
 	// following options are only used by server
 	PortPassword map[string]string `json:"port_password"`
 	Timeout      int               `json:"timeout"`
-
+	AllowIps     []string          `json:"allowIps"`
 	// following options are only used by client
 
 	// The order of servers in the client config is significant, so use array
@@ -72,6 +72,7 @@ typeError:
 func ParseConfig(path string) (config *Config, err error) {
 	file, err := os.Open(path) // For read access.
 	if err != nil {
+		fmt.Println(path, "not found")
 		return
 	}
 	defer file.Close()

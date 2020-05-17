@@ -19,7 +19,7 @@ import (
 	"syscall"
 	"time"
 
-	ss "github.com/shadowsocks/shadowsocks-go/shadowsocks"
+	ss "github.com/huangwenjimmy/shadowsocks-go/shadowsocks"
 )
 
 const (
@@ -107,8 +107,20 @@ func sanitizeAddr(addr net.Addr) string {
 }
 
 func handleConnection(conn *ss.Conn, port string) {
+	addr := conn.RemoteAddr().String()
+	end := strings.Index(addr, "]")
+	if end == -1 {
+		addr = string(([]byte(addr))[0:strings.Index(addr, ":")])
+	} else {
+		addr = string(([]byte(addr))[1:end])
+	}
+	//也可以用下面方法
+	//net.SplitHostPort(conn.RemoteAddr().String())
+	if !allowAccess(addr) {
+		log.Println("error not allow access ", addr)
+		return
+	}
 	var host string
-
 	connCnt++ // this maybe not accurate, but should be enough
 	if connCnt-nextLogConnCnt >= 0 {
 		// XXX There's no xadd in the atomic package, so it's difficult to log
@@ -140,6 +152,7 @@ func handleConnection(conn *ss.Conn, port string) {
 		closed = true
 		return
 	}
+
 	// ensure the host does not contain some illegal characters, NUL may panic on Win32
 	if strings.ContainsRune(host, 0x00) {
 		log.Println("invalid domain name.")
@@ -426,6 +439,14 @@ func unifyPortPassword(config *ss.Config) (err error) {
 var configFile string
 var config *ss.Config
 
+func allowAccess(addr string) bool {
+	for _, v := range config.AllowIps {
+		if addr == v {
+			return true
+		}
+	}
+	return false
+}
 func main() {
 	log.SetOutput(os.Stdout)
 
@@ -445,7 +466,6 @@ func main() {
 	flag.BoolVar(&udp, "u", false, "UDP Relay")
 	flag.StringVar(&managerAddr, "manager-address", "", "shadowsocks manager listening address")
 	flag.Parse()
-
 	if printVer {
 		ss.PrintVersion()
 		os.Exit(0)

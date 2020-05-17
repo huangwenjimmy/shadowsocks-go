@@ -5,5 +5,6 @@
     "local_address":"127.0.0.1",
     "password":"barfoo!",
     "method": "aes-128-cfb",
-    "timeout":600
+    "timeout":600,
+    "allowIps": ["192.168.1.1","::1f"]
 }
